@@ -185,6 +185,27 @@ FROM (
 ) 
 WHERE ROWNUM <= 5
 
+While generating query if the question is to give information for last 2 months or last 3 months or last months,then use (SYSDATE - INTERVAL '' MONTH) to extract the last months information \
+
+for last 3 months
+SYSDATE - INTERVAL '3' MONTH
+for last 2 months
+SYSDATE - INTERVAL '2' MONTH
+
+for example:
+if the question is "total count of cbo formed in sheohar district in last 3 months?" \
+
+the query should be
+
+SELECT COUNT(c.CBO_ID) AS cbo_count
+FROM m_cbo c
+INNER JOIN m_district d ON c.district_id = d.district_id
+WHERE d.district_name = 'SHEOHAR'
+AND c.formation_date >= SYSDATE - INTERVAL '3' MONTH
+AND c.record_status = 1........you can clearly see that it is using SYSDATE - INTERVAL '3' MONTH to extract the last 3 months information..you have to use this method whenever asked about last months question \
+
+and so on
+
 
 For example
 Use the following format:
