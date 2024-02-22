@@ -260,4 +260,51 @@ examples = [{
                             AND c.record_status=1""",
             "result": """[(1075033)]""",
             "answer": """There are total 1075033 SHG """,
+        },
+        {
+             "input": "How many SHGs in Patna district formed between Jan to March 2023?",
+            "sql_cmd": """SELECT *
+                            FROM (
+                                SELECT
+                                    COUNT(*) AS shg_count
+                                FROM
+                                    m_cbo c
+                                INNER JOIN
+                                    m_cbo_type t ON c.cbo_type_id = t.cbo_type_id
+                                INNER JOIN
+                                    m_district d ON c.district_id = d.district_id
+                                WHERE
+                                    t.type_short_name = 'SHG'
+                                    AND d.district_name = 'PATNA'
+                                    AND SUBSTR(c.formation_date, 4, 2) BETWEEN '01' AND '03'
+                                    AND SUBSTR(c.formation_date, 7, 2) = '23'
+                                    AND c.record_status = 1
+                            ) 
+                            WHERE ROWNUM <= 5""",
+            "result": """[(631)]""",
+            "answer": """There are total 631 SHG formed in Patna district between Jan to March 2023 """,
+        },
+        {
+            "input": "Number of cbo per block per district",
+            "sql_cmd": """SELECT *
+                            FROM (
+                                SELECT d.DISTRICT_NAME, b.BLOCK_NAME, COUNT(c.CBO_ID) AS cbos
+                                FROM m_cbo c
+                                INNER JOIN m_block b ON b.BLOCK_ID = c.BLOCK_ID
+                                INNER JOIN m_district d ON d.DISTRICT_ID = b.DISTRICT_ID
+                                WHERE c.record_status = 1
+                                GROUP BY d.DISTRICT_NAME, b.BLOCK_NAME
+                                ORDER BY d.DISTRICT_NAME, b.BLOCK_NAME
+                            ) 
+                            WHERE ROWNUM <= 5""",
+            "result": """[(ARARIA	Araria	4560
+                                    ARARIA	Bhargama	3278
+                                    ARARIA	Forbesganj	3726
+                                    ARARIA	Jokihat	3147
+                                    ARARIA	Kursakatta	2205)]""",
+            "answer": """ARARIA	Araria	4560
+                            ARARIA	Bhargama	3278
+                            ARARIA	Forbesganj	3726
+                            ARARIA	Jokihat	3147
+                            ARARIA	Kursakatta	2205""",
         }]

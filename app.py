@@ -168,19 +168,23 @@ WHERE c.record_status=1
 GROUP BY d.DISTRICT_NAME, b.BLOCK_NAME
 ORDER BY d.DISTRICT_NAME, b.BLOCK_NAME
 WHERE ROWNUM <= 5;.......which is wrong you can clearly see that you have used semicolon(;) at the end of query..you should not use semicolon(;) \
-
+                        Also the 'ROWNUM' condition is applied directly with query ,the ROWNUM condition should be applied after the subquery has been executed, ensuring that it limits the number of rows returned correctly \
                         This is just one example to show you that this kind of mistake should not be done.
 
                         The right query is:-...
 
-                        SELECT d.DISTRICT_NAME, b.BLOCK_NAME, COUNT(c.CBO_ID) AS cbos
-FROM m_cbo c
-INNER JOIN m_block b ON b.BLOCK_ID = c.BLOCK_ID
-INNER JOIN m_district d ON d.DISTRICT_ID = b.DISTRICT_ID
-WHERE c.record_status=1
-GROUP BY d.DISTRICT_NAME, b.BLOCK_NAME
-ORDER BY d.DISTRICT_NAME, b.BLOCK_NAME
+                        SELECT *
+FROM (
+    SELECT d.DISTRICT_NAME, b.BLOCK_NAME, COUNT(c.CBO_ID) AS cbos
+    FROM m_cbo c
+    INNER JOIN m_block b ON b.BLOCK_ID = c.BLOCK_ID
+    INNER JOIN m_district d ON d.DISTRICT_ID = b.DISTRICT_ID
+    WHERE c.record_status = 1
+    GROUP BY d.DISTRICT_NAME, b.BLOCK_NAME
+    ORDER BY d.DISTRICT_NAME, b.BLOCK_NAME
+) 
 WHERE ROWNUM <= 5
+
 
 For example
 Use the following format:
@@ -278,84 +282,85 @@ query = full_chain.invoke(
 
 
 
-# @app.route('/response', methods=['POST'])
-# def api():
-#     try:
-#         data = request.get_json()
-#         question = data.get('question', '')
-#         query = full_chain.invoke(
-#         {"question": question })
-#         llm2= GoogleGenerativeAI(model="gemini-pro",google_api_key='AIzaSyBZswmKbZf8YzE_41upIXNNwwIh2nkd8v0', temperature=0)
+@app.route('/response', methods=['POST'])
+def api():
+    try:
+        data = request.get_json()
+        question = data.get('question', '')
+        query = full_chain.invoke(
+        {"question": question })
+        llm2= GoogleGenerativeAI(model="gemini-pro",google_api_key='AIzaSyBZswmKbZf8YzE_41upIXNNwwIh2nkd8v0', temperature=0)
     
             
-#         final_query=llm2(f"This is a oracle sql query {query} which is going to be executed but if the query contains semicolon in the end or any special character at begining or end except query then it will not run ...your task is to return the same query by removing semicolon(;) or any special character in the begining or end if it contains..if it does not contain then its good just return the query as it is.")
-#         print(final_query)
-#         response = llm2(f"""this is user question {question} and this is the answer {db.run(final_query)}....combine both to give a natural language answer...this is very important to include only this value {db.run(final_query)} in your answer \ 
-#         .....answer in pointwise....your final answer must include the values of {db.run(final_query)} \ 
-#         Remember that vo means village organisation,shg means self help group,cbo means community based organisation and clf means cluster level federation \
-#                     Pay attention to not add anything from your side in answer.. just give simple natural language answer including this value {db.run(final_query)}. 
+        final_query=llm2(f"This is a oracle sql query {query} which is going to be executed but if the query contains semicolon in the end or any special character at begining or end except query then it will not run ...your task is to return the same query by removing semicolon(;) or any special character in the begining or end if it contains..if it does not contain then its good just return the query as it is.")
+        print(final_query)
+        response = llm2(f"""this is user question {question} and this is the answer {db.run(final_query)}....combine both to give a natural language answer...this is very important to include only this value {db.run(final_query)} in your answer \ 
+        .....answer in pointwise....your final answer must include the values of {db.run(final_query)} \ 
+        Remember that vo means village organisation,shg means self help group,cbo means community based organisation and clf means cluster level federation \
+                    Pay attention to not add anything from your side in answer.. just give simple natural language answer including this value {db.run(final_query)}. 
                 
-#                 if the answer has many rows or columns then only give first five answer for example if answer is like this \ 
-#                                                             ARARIA	2309
-#                                                             JAMUI	1293
-#                                                             JEHANABAD	963
-#                                                             KAIMUR (BHABUA)	1205
-#                                                             MUZAFFARPUR	3717
-#                                                             SHEIKHPURA	445
-#                                                             AURANGABAD	1847
-#                                                             KATIHAR	2365
-#                                                             NALANDA	2298
-#                                                             SAMASTIPUR	3449
-#                                                             SUPAUL	2131
-#                                                             GOPALGANJ	1806
-#                                                             KISHANGANJ	1443
-#                                                             NAWADA	1612
-#                                                             PURNIA	2655
-#                                                             SITAMARHI	2733
-#                                                             BHAGALPUR	2062
-#                                                             BHOJPUR	1580
-#                                                             DARBHANGA	3170
-#                                                             SAHARSA	1568
-#                                                             SHEOHAR	605
-#                                                             LAKHISARAI	572
-#                                                             MUNGER	802
-#                                                             SARAN	2374
-#                                                             BUXAR	998
-#                                                             MADHUBANI	3384
-#                                                             PATNA	2725
-#                                                             PURBI CHAMPARAN	3721
-#                                                             ROHTAS	1751
-#                                                             SIWAN	2214
-#                                                             BANKA	1761
-#                                                             BEGUSARAI	2019
-#                                                             KHAGARIA	1484
-#                                                             MADHEPURA	2006
-#                                                             PASHCHIM CHAMPARAN	2676
-#                                                             VAISHALI	2666
-#                                                             GAYA	3404
-#                                                             ARWAL	579......then your answer should be this... \
-#                                                             JAMUI	1293
-#                                                             JEHANABAD	963
-#                                                             KAIMUR (BHABUA)	1205
-#                                                             MUZAFFARPUR	3717
-#                                                            SHEIKHPURA	445""")
-#         print(response)
-#         print(db.run(final_query))
+                if the answer has many rows or columns then only give first five answer for example if answer is like this \ 
+                                                            ARARIA	2309
+                                                            JAMUI	1293
+                                                            JEHANABAD	963
+                                                            KAIMUR (BHABUA)	1205
+                                                            MUZAFFARPUR	3717
+                                                            SHEIKHPURA	445
+                                                            AURANGABAD	1847
+                                                            KATIHAR	2365
+                                                            NALANDA	2298
+                                                            SAMASTIPUR	3449
+                                                            SUPAUL	2131
+                                                            GOPALGANJ	1806
+                                                            KISHANGANJ	1443
+                                                            NAWADA	1612
+                                                            PURNIA	2655
+                                                            SITAMARHI	2733
+                                                            BHAGALPUR	2062
+                                                            BHOJPUR	1580
+                                                            DARBHANGA	3170
+                                                            SAHARSA	1568
+                                                            SHEOHAR	605
+                                                            LAKHISARAI	572
+                                                            MUNGER	802
+                                                            SARAN	2374
+                                                            BUXAR	998
+                                                            MADHUBANI	3384
+                                                            PATNA	2725
+                                                            PURBI CHAMPARAN	3721
+                                                            ROHTAS	1751
+                                                            SIWAN	2214
+                                                            BANKA	1761
+                                                            BEGUSARAI	2019
+                                                            KHAGARIA	1484
+                                                            MADHEPURA	2006
+                                                            PASHCHIM CHAMPARAN	2676
+                                                            VAISHALI	2666
+                                                            GAYA	3404
+                                                            ARWAL	579......then your answer should be this... \
+                                                            JAMUI	1293
+                                                            JEHANABAD	963
+                                                            KAIMUR (BHABUA)	1205
+                                                            MUZAFFARPUR	3717
+                                                           SHEIKHPURA	445""")
+        print(response)
+        print(db.run(final_query))
 
-#         print("-"*20)
-#         cursor = connection.cursor()
-#         cursor.execute(final_query)
+        print("-"*20)
+
+        cursor = connection.cursor()
+       
+            
+        cursor.execute(final_query)
+
     
-#     # Fetch the results
-#         rows = cursor.fetchall()
     
-#     # Print the results
-#         for row in rows:
-#             print(row)
-#         return jsonify({'response': response})
-#     except SQLAlchemyError as e:
-#         return jsonify({'error': f'Database error: {str(e)}'}), 500
-#     except Exception as e:
-#         return jsonify({'error': str(e)}), 500
-# if __name__ == '__main__':
-#     app.run(host='0.0.0.0', port=5000)
+    
+       
+        return jsonify({'response': response})
+    except SQLAlchemyError as e:
+        return jsonify({'error': f'Database error: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
