@@ -119,7 +119,7 @@ Detail information about table and its columns are as follows:-
 
 While generating query you have to take in consideration that only those values are considered whose record_status is 1,this record_status column is present in m_cbo table..so you have to always use where c.record_staus=1 in the query where c is alias name of m_cbo table \
 For example if question is like 
-What is the total count of SHG?....then query should be...SELECT COUNT(c.CBO_ID) AS shg_count
+What is the total count of SHG in Patna in 2023?....then query should be...SELECT COUNT(c.CBO_ID) AS shg_count
                             FROM m_cbo c
                             INNER JOIN m_cbo_type t ON c.CBO_TYPE_ID = t.CBO_TYPE_ID  
                             INNER JOIN m_district d ON c.DISTRICT_ID = d.DISTRICT_ID
@@ -168,19 +168,96 @@ WHERE c.record_status=1
 GROUP BY d.DISTRICT_NAME, b.BLOCK_NAME
 ORDER BY d.DISTRICT_NAME, b.BLOCK_NAME
 WHERE ROWNUM <= 5;.......which is wrong you can clearly see that you have used semicolon(;) at the end of query..you should not use semicolon(;) \
-
+                        Also the 'ROWNUM' condition is applied directly with query , \
                         This is just one example to show you that this kind of mistake should not be done.
 
                         The right query is:-...
 
-                        SELECT d.DISTRICT_NAME, b.BLOCK_NAME, COUNT(c.CBO_ID) AS cbos
+
+    SELECT d.DISTRICT_NAME, b.BLOCK_NAME, COUNT(c.CBO_ID) AS cbos
+    FROM m_cbo c
+    INNER JOIN m_block b ON b.BLOCK_ID = c.BLOCK_ID
+    INNER JOIN m_district d ON d.DISTRICT_ID = b.DISTRICT_ID
+    WHERE c.record_status = 1
+    GROUP BY d.DISTRICT_NAME, b.BLOCK_NAME
+    ORDER BY d.DISTRICT_NAME, b.BLOCK_NAME
+...
+
+For example:-
+
+when i ask....What is the total amount of savings for all SHGs in district Bhojpur?
+
+then the query generated is this \
+SELECT SUM(GENERAL_SAVING_AMOUNT + HRF_SAVING_AMOUNT + OTHER_SAVING_1 + OTHER_SAVING_2 + OTHER_SAVING_3) AS total_savings
+FROM M_CBO
+WHERE DISTRICT_ID = (SELECT DISTRICT_ID FROM M_DISTRICT WHERE DISTRICT_NAME = 'BHOJPUR')
+AND CBO_TYPE_ID = (SELECT CBO_TYPE_ID FROM M_CBO_TYPE WHERE TYPE_SHORT_NAME = 'SHG')
+AND RECORD_STATUS = 1
+WHERE ROWNUM <= 5...which is wrong the right query is.. \
+
+SELECT SUM(GENERAL_SAVING_AMOUNT + HRF_SAVING_AMOUNT + OTHER_SAVING_1 + OTHER_SAVING_2 + OTHER_SAVING_3) AS total_savings
+FROM M_CBO
+WHERE DISTRICT_ID = (SELECT DISTRICT_ID FROM M_DISTRICT WHERE DISTRICT_NAME = 'BHOJPUR')
+AND CBO_TYPE_ID = (SELECT CBO_TYPE_ID FROM M_CBO_TYPE WHERE TYPE_SHORT_NAME = 'SHG')
+AND RECORD_STATUS = 1...you can clearly see i have not used WHERE ROWNUM <= 5 which is not required..\
+
+One more important thing to never use limit to select the first 5 or first 4 \
+
+While generating query if the question is to give information for last 2 months or last 3 months or last months,then use (SYSDATE - INTERVAL '' MONTH) to extract the last months information \
+
+Never use ROWNUM with query......only use this if you are asked to select first 5 or first ten in that case you can use ROWNUM but with subquery \
+For Example:- 
+when asked What is the most common CBO type in district Vaishali?
+
+then query generated is....SELECT TYPE_DESCRIPTION, COUNT(CBO_ID) AS CBO_COUNT
+FROM M_CBO C
+INNER JOIN M_CBO_TYPE T ON C.CBO_TYPE_ID = T.CBO_TYPE_ID
+WHERE C.DISTRICT_ID = (SELECT DISTRICT_ID FROM M_DISTRICT WHERE DISTRICT_NAME = 'VAISHALI')
+AND C.RECORD_STATUS = 1
+GROUP BY TYPE_DESCRIPTION
+ORDER BY CBO_COUNT DESC
+WHERE ROWNUM <= 5...which is wrong you can clearly see that ROWNUM has been used directly with query and also ROWNUM is not required here \
+
+The right query is...SELECT TYPE_DESCRIPTION, COUNT(CBO_ID) AS CBO_COUNT
+                        FROM M_CBO C
+                        INNER JOIN M_CBO_TYPE T ON C.CBO_TYPE_ID = T.CBO_TYPE_ID
+                        WHERE C.DISTRICT_ID = (SELECT DISTRICT_ID FROM M_DISTRICT WHERE DISTRICT_NAME = 'VAISHALI')
+                        AND C.RECORD_STATUS = 1
+                        GROUP BY TYPE_DESCRIPTION
+                        ORDER BY CBO_COUNT DESC
+
+
+For last 3 months
+SYSDATE - INTERVAL '3' MONTH
+for last 2 months
+SYSDATE - INTERVAL '2' MONTH
+
+for example:
+if the question is "total count of cbo formed in sheohar district in last 3 months?" \
+
+the query should be
+
+SELECT COUNT(c.CBO_ID) AS cbo_count
 FROM m_cbo c
-INNER JOIN m_block b ON b.BLOCK_ID = c.BLOCK_ID
-INNER JOIN m_district d ON d.DISTRICT_ID = b.DISTRICT_ID
-WHERE c.record_status=1
-GROUP BY d.DISTRICT_NAME, b.BLOCK_NAME
-ORDER BY d.DISTRICT_NAME, b.BLOCK_NAME
-WHERE ROWNUM <= 5
+INNER JOIN m_district d ON c.district_id = d.district_id
+WHERE d.district_name = 'SHEOHAR'
+AND c.formation_date >= SYSDATE - INTERVAL '3' MONTH
+AND c.record_status = 1........you can clearly see that it is using SYSDATE - INTERVAL '3' MONTH to extract the last 3 months information..you have to use this method whenever asked about last months question \
+
+and so on \
+
+Some more examples:-
+
+question:-What is the count of all members across SHGs, VOs and CLFs in district Patna?", \
+
+sql query:- SELECT
+    SUM(CASE WHEN cbo_type_id = (SELECT cbo_type_id FROM m_cbo_type WHERE type_short_name = 'SHG') THEN 1 ELSE 0 END) AS shg_count,
+    SUM(CASE WHEN cbo_type_id = (SELECT cbo_type_id FROM m_cbo_type WHERE type_short_name = 'VO') THEN 1 ELSE 0 END) AS vo_count,
+    SUM(CASE WHEN cbo_type_id = (SELECT cbo_type_id FROM m_cbo_type WHERE type_short_name = 'CLF') THEN 1 ELSE 0 END) AS clf_count
+FROM m_cbo c
+WHERE district_id = (SELECT district_id FROM m_district WHERE district_name = 'PATNA')
+AND c.record_status = 1
+
 
 For example
 Use the following format:
@@ -278,84 +355,88 @@ query = full_chain.invoke(
 
 
 
-# @app.route('/response', methods=['POST'])
-# def api():
-#     try:
-#         data = request.get_json()
-#         question = data.get('question', '')
-#         query = full_chain.invoke(
-#         {"question": question })
-#         llm2= GoogleGenerativeAI(model="gemini-pro",google_api_key='AIzaSyBZswmKbZf8YzE_41upIXNNwwIh2nkd8v0', temperature=0)
+@app.route('/response', methods=['POST'])
+def api():
+    try:
+        data = request.get_json()
+        question = data.get('question', '')
+        query = full_chain.invoke(
+        {"question": question })
+        llm2= GoogleGenerativeAI(model="gemini-pro",google_api_key='AIzaSyBZswmKbZf8YzE_41upIXNNwwIh2nkd8v0', temperature=0)
     
             
-#         final_query=llm2(f"This is a oracle sql query {query} which is going to be executed but if the query contains semicolon in the end or any special character at begining or end except query then it will not run ...your task is to return the same query by removing semicolon(;) or any special character in the begining or end if it contains..if it does not contain then its good just return the query as it is.")
-#         print(final_query)
-#         response = llm2(f"""this is user question {question} and this is the answer {db.run(final_query)}....combine both to give a natural language answer...this is very important to include only this value {db.run(final_query)} in your answer \ 
-#         .....answer in pointwise....your final answer must include the values of {db.run(final_query)} \ 
-#         Remember that vo means village organisation,shg means self help group,cbo means community based organisation and clf means cluster level federation \
-#                     Pay attention to not add anything from your side in answer.. just give simple natural language answer including this value {db.run(final_query)}. 
+        final_query=llm2(f"This is a oracle sql query {query} which is going to be executed but if the query contains semicolon in the end or any special character at begining or end except query then it will not run ...your task is to return the same query by removing semicolon(;) or any special character in the begining or end if it contains..if it does not contain then its good just return the query as it is.")
+        print(final_query)
+        
+        response = llm2(f"""this is user question {question} and this is the answer {db.run(final_query)}....combine both to give a natural language answer...this is very important to include only this value {db.run(final_query)} in your answer \ 
+        .....answer in pointwise....your final answer must include the values of {db.run(final_query)} \ 
+        Remember that vo means village organisation,shg means self help group,cbo means community based organisation and clf means cluster level federation \
+                    Pay attention to not add anything from your side in answer.. just give simple natural language answer including this value {db.run(final_query)}. 
                 
-#                 if the answer has many rows or columns then only give first five answer for example if answer is like this \ 
-#                                                             ARARIA	2309
-#                                                             JAMUI	1293
-#                                                             JEHANABAD	963
-#                                                             KAIMUR (BHABUA)	1205
-#                                                             MUZAFFARPUR	3717
-#                                                             SHEIKHPURA	445
-#                                                             AURANGABAD	1847
-#                                                             KATIHAR	2365
-#                                                             NALANDA	2298
-#                                                             SAMASTIPUR	3449
-#                                                             SUPAUL	2131
-#                                                             GOPALGANJ	1806
-#                                                             KISHANGANJ	1443
-#                                                             NAWADA	1612
-#                                                             PURNIA	2655
-#                                                             SITAMARHI	2733
-#                                                             BHAGALPUR	2062
-#                                                             BHOJPUR	1580
-#                                                             DARBHANGA	3170
-#                                                             SAHARSA	1568
-#                                                             SHEOHAR	605
-#                                                             LAKHISARAI	572
-#                                                             MUNGER	802
-#                                                             SARAN	2374
-#                                                             BUXAR	998
-#                                                             MADHUBANI	3384
-#                                                             PATNA	2725
-#                                                             PURBI CHAMPARAN	3721
-#                                                             ROHTAS	1751
-#                                                             SIWAN	2214
-#                                                             BANKA	1761
-#                                                             BEGUSARAI	2019
-#                                                             KHAGARIA	1484
-#                                                             MADHEPURA	2006
-#                                                             PASHCHIM CHAMPARAN	2676
-#                                                             VAISHALI	2666
-#                                                             GAYA	3404
-#                                                             ARWAL	579......then your answer should be this... \
-#                                                             JAMUI	1293
-#                                                             JEHANABAD	963
-#                                                             KAIMUR (BHABUA)	1205
-#                                                             MUZAFFARPUR	3717
-#                                                            SHEIKHPURA	445""")
-#         print(response)
-#         print(db.run(final_query))
+                if the answer has many rows or columns then only give first five answer for example if answer is like this \ 
+                                                            ARARIA	2309
+                                                            JAMUI	1293
+                                                            JEHANABAD	963
+                                                            KAIMUR (BHABUA)	1205
+                                                            MUZAFFARPUR	3717
+                                                            SHEIKHPURA	445
+                                                            AURANGABAD	1847
+                                                            KATIHAR	2365
+                                                            NALANDA	2298
+                                                            SAMASTIPUR	3449
+                                                            SUPAUL	2131
+                                                            GOPALGANJ	1806
+                                                            KISHANGANJ	1443
+                                                            NAWADA	1612
+                                                            PURNIA	2655
+                                                            SITAMARHI	2733
+                                                            BHAGALPUR	2062
+                                                            BHOJPUR	1580
+                                                            DARBHANGA	3170
+                                                            SAHARSA	1568
+                                                            SHEOHAR	605
+                                                            LAKHISARAI	572
+                                                            MUNGER	802
+                                                            SARAN	2374
+                                                            BUXAR	998
+                                                            MADHUBANI	3384
+                                                            PATNA	2725
+                                                            PURBI CHAMPARAN	3721
+                                                            ROHTAS	1751
+                                                            SIWAN	2214
+                                                            BANKA	1761
+                                                            BEGUSARAI	2019
+                                                            KHAGARIA	1484
+                                                            MADHEPURA	2006
+                                                            PASHCHIM CHAMPARAN	2676
+                                                            VAISHALI	2666
+                                                            GAYA	3404
+                                                            ARWAL	579......then your answer should be this... \
+                                                            JAMUI	1293
+                                                            JEHANABAD	963
+                                                            KAIMUR (BHABUA)	1205
+                                                            MUZAFFARPUR	3717
+                                                           SHEIKHPURA	445""")
+        print(response)
 
-#         print("-"*20)
-#         cursor = connection.cursor()
-#         cursor.execute(final_query)
+        
+        print(db.run(final_query))
+
+        print("-"*20)
+
+        cursor = connection.cursor()
+       
+            
+        cursor.execute(final_query)
+
     
-#     # Fetch the results
-#         rows = cursor.fetchall()
     
-#     # Print the results
-#         for row in rows:
-#             print(row)
-#         return jsonify({'response': response})
-#     except SQLAlchemyError as e:
-#         return jsonify({'error': f'Database error: {str(e)}'}), 500
-#     except Exception as e:
-#         return jsonify({'error': str(e)}), 500
-# if __name__ == '__main__':
-#     app.run(host='0.0.0.0', port=5000)
+    
+       
+        return jsonify({'response': response})
+    except SQLAlchemyError as e:
+        return jsonify({'error': f'Database error: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
