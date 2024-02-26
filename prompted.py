@@ -109,6 +109,18 @@ examples = [{
             "answer": """There are total 20863 shg	1535 vo and	37 CLF in district BHOJPUR """,
         },
         {
+             "input": "What is the count of all members across SHGs, VOs and CLFs in district Patna?",
+            "sql_cmd": """SSELECT
+    SUM(CASE WHEN cbo_type_id = (SELECT cbo_type_id FROM m_cbo_type WHERE type_short_name = 'SHG') THEN 1 ELSE 0 END) AS shg_count,
+    SUM(CASE WHEN cbo_type_id = (SELECT cbo_type_id FROM m_cbo_type WHERE type_short_name = 'VO') THEN 1 ELSE 0 END) AS vo_count,
+    SUM(CASE WHEN cbo_type_id = (SELECT cbo_type_id FROM m_cbo_type WHERE type_short_name = 'CLF') THEN 1 ELSE 0 END) AS clf_count
+FROM m_cbo c
+WHERE district_id = (SELECT district_id FROM m_district WHERE district_name = 'PATNA')
+AND c.record_status = 1""",
+            "result": """[(41010	2725	65)]""",
+            "answer": """There are total 41010 shg	12725 vo and	65 CLF in district PATNA """,
+        },
+        {
             "input": "how many shg saving account in last 6 months?",
             "sql_cmd": """SELECT
                     COUNT(DISTINCT c.CBO_ID) AS SHG_Saving_ACC
@@ -260,4 +272,89 @@ examples = [{
                             AND c.record_status=1""",
             "result": """[(1075033)]""",
             "answer": """There are total 1075033 SHG """,
+        },
+        {
+             "input": "How many SHGs in Patna district formed between Jan to March 2023?",
+            "sql_cmd": """
+                                SELECT
+                                    COUNT(*) AS shg_count
+                                FROM
+                                    m_cbo c
+                                INNER JOIN
+                                    m_cbo_type t ON c.cbo_type_id = t.cbo_type_id
+                                INNER JOIN
+                                    m_district d ON c.district_id = d.district_id
+                                WHERE
+                                    t.type_short_name = 'SHG'
+                                    AND d.district_name = 'PATNA'
+                                    AND SUBSTR(c.formation_date, 4, 2) BETWEEN '01' AND '03'
+                                    AND SUBSTR(c.formation_date, 7, 2) = '23'
+                                    AND c.record_status = 1
+                            """,
+            "result": """[(631)]""",
+            "answer": """There are total 631 SHG formed in Patna district between Jan to March 2023 """,
+        },
+        {
+            "input": "Number of cbo per block per district",
+            "sql_cmd": """
+                                SELECT d.DISTRICT_NAME, b.BLOCK_NAME, COUNT(c.CBO_ID) AS cbos
+                                FROM m_cbo c
+                                INNER JOIN m_block b ON b.BLOCK_ID = c.BLOCK_ID
+                                INNER JOIN m_district d ON d.DISTRICT_ID = b.DISTRICT_ID
+                                WHERE c.record_status = 1
+                                GROUP BY d.DISTRICT_NAME, b.BLOCK_NAME
+                                ORDER BY d.DISTRICT_NAME, b.BLOCK_NAME
+                            """,
+            "result": """[(ARARIA	Araria	4560
+                                    ARARIA	Bhargama	3278
+                                    ARARIA	Forbesganj	3726
+                                    ARARIA	Jokihat	3147
+                                    ARARIA	Kursakatta	2205)]""",
+            "answer": """ARARIA	Araria	4560
+                            ARARIA	Bhargama	3278
+                            ARARIA	Forbesganj	3726
+                            ARARIA	Jokihat	3147
+                            ARARIA	Kursakatta	2205""",
+        },
+        {
+             "input": "What is the distribution of Community Based Organizations (CBOs) by their types, and how many CBOs are there for each type",
+            "sql_cmd": """SELECT t.TYPE_SHORT_NAME, COUNT(c.CBO_ID) AS cbo_count
+                            FROM m_cbo c
+                            INNER JOIN m_cbo_type t ON c.CBO_TYPE_ID = t.CBO_TYPE_ID
+                            WHERE c.record_status = 1
+                            GROUP BY t.TYPE_SHORT_NAME
+                            ORDER BY cbo_count DESC""",
+            "result": """[(SHG	1073354
+                                VO	75448
+                                PG	5998
+                                CLF	1658
+                                TLC	29
+                                PC	18)]""",
+            "answer": """there are SHG	1073354
+                                VO	75448
+                                PG	5998
+                                CLF	1658
+                                TLC	29
+                                PC	18""",
+        },
+        {
+            "input": "What is the most common CBO type in district Vaishali?",
+            "sql_cmd": """SELECT TYPE_DESCRIPTION, COUNT(CBO_ID) AS CBO_COUNT
+                        FROM M_CBO C
+                        INNER JOIN M_CBO_TYPE T ON C.CBO_TYPE_ID = T.CBO_TYPE_ID
+                        WHERE C.DISTRICT_ID = (SELECT DISTRICT_ID FROM M_DISTRICT WHERE DISTRICT_NAME = 'VAISHALI')
+                        AND C.RECORD_STATUS = 1
+                        GROUP BY TYPE_DESCRIPTION
+                        ORDER BY CBO_COUNT DESC
+""",
+            "result": """[(Self Helped Group	37395
+                            village Organization	2653
+                            Producer Group	241
+                            Cluster Level Federa	60
+                            Producer Company	3)]""",
+            "answer": """There are Self Helped Group	37395
+                            village Organization	2653
+                            Producer Group	241
+                            Cluster Level Federa	60
+                            Producer Company	3 in Vaishali"""
         }]
