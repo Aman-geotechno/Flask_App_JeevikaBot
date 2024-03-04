@@ -1,33 +1,36 @@
-examples = [{
+examples = [
+    {
     
             "input": "What is the total count of shg?",
-            "sql_cmd": """SELECT COUNT(DISTINCT c.cbo_id) AS shg_count \
-                            FROM m_cbo c \
-                            INNER JOIN m_cbo_type t ON c.cbo_type_id = t.cbo_type_id \
-                            WHERE t.type_short_name = 'SHG' AND c.record_status=1""",
-            "result": """[(1075033)]""",
-            "answer": """There are total 1075033 SHG """,
+            "sql_cmd": """SELECT COUNT(DISTINCT c.cbo_id) AS shg_count 
+                            FROM m_cbo c 
+                            INNER JOIN m_cbo_type t ON c.cbo_type_id = t.cbo_type_id 
+                            WHERE upper(t.type_short_name) = 'SHG' AND c.record_status=1""",
+            "result": "[(1075033)]",
+            "answer": "There are total 1075033 SHG ",
 
 },
 {
     "input": "What is the total count of CLF?",
-            "sql_cmd": """SELECT COUNT(DISTINCT c.cbo_id) AS clf_count \
-                            FROM m_cbo c \
-                            INNER JOIN m_cbo_type t ON c.cbo_type_id = t.cbo_type_id \
-                            WHERE t.type_short_name = 'CLF' AND c.record_status=1""",
-            "result": """[(1658)]""",
-            "answer": """There are total 1658 CLF""",
+            "sql_cmd": """SELECT COUNT(DISTINCT c.cbo_id) AS clf_count 
+                            FROM m_cbo c 
+                            INNER JOIN m_cbo_type t ON c.cbo_type_id = t.cbo_type_id 
+                            WHERE upper(t.type_short_name) = 'CLF' AND c.record_status=1""",
+            "result": "[(1658)]",
+            "answer": "There are total 1658 CLF",
 },
+
+
 {
     "input": "What is the total count of VO?",
             "sql_cmd": """SELECT COUNT(DISTINCT c.cbo_id) AS vo_count \
                             FROM m_cbo c \
                             INNER JOIN m_cbo_type t ON c.cbo_type_id = t.cbo_type_id \
-                            WHERE t.type_short_name = 'VO' AND c.record_status=1""",
+                            WHERE upper(t.type_short_name) = 'VO' AND c.record_status=1""",
             "result": """[(75368)]""",
             "answer": """There are total 75368 VO""",
 },
-        {
+{
             "input": "Number of cbo per block per district",
             "sql_cmd": """SELECT d.DISTRICT_NAME, b.BLOCK_NAME, COUNT(c.CBO_ID) AS cbos \
                         FROM m_cbo c \
@@ -63,23 +66,23 @@ examples = [{
         
         {
             "input": "total count of 9 month old shg saving account",
-            "sql_cmd": """SELECT COUNT(c.cbo_id) AS shg_count \
-                            FROM m_cbo c \
-                            INNER JOIN m_district d ON d.DISTRICT_ID = c.DISTRICT_ID \
-                            WHERE MONTHS_BETWEEN(SYSDATE, c.formation_date) >= 9 \
-                            AND MONTHS_BETWEEN(SYSDATE, c.formation_date) < 10 \
-                            AND c.record_status=1 \
-                            AND c.cbo_type_id = (SELECT cbo_type_id FROM m_cbo_type WHERE TYPE_SHORT_NAME = 'SHG')""",
-            "result": """[(1793)]""",
-            "answer": """1793 are count of 9 month old shg saving account""",
+            "sql_cmd": """SELECT COUNT(c.cbo_id) AS shg_count
+FROM m_cbo c
+INNER JOIN m_district d ON d.district_id = c.district_id
+WHERE c.record_status = 1
+AND c.cbo_type_id = (SELECT cbo_type_id FROM m_cbo_type WHERE upper(type_short_name) = 'SHG')
+AND c.formation_date <= CURRENT_DATE - INTERVAL '9 MONTH'
+AND c.formation_date > CURRENT_DATE - INTERVAL '10 MONTH'""",
+            "result": """[(2110)]""",
+            "answer": """2110 are count of 9 month old shg saving account""",
         },
         {
             "input": "total count of shg in project nrlm in current year",
             "sql_cmd": """SELECT COUNT(c.cbo_id) AS shg_count
                         FROM m_cbo c
                         INNER JOIN m_block b ON b.block_id = c.block_id
-                        WHERE b.project_code = 'NRLM' 
-                        AND c.cbo_type_id = (SELECT cbo_type_id FROM m_cbo_type WHERE type_short_name = 'SHG')
+                        WHERE upper(b.project_code) = 'NRLM' 
+                        AND c.cbo_type_id = (SELECT cbo_type_id FROM m_cbo_type WHERE upper(type_short_name) = 'SHG')
                         AND EXTRACT(YEAR FROM c.formation_date) = EXTRACT(YEAR FROM SYSDATE)
                         AND c.record_status=1""",
             "result": """[(32)]""",
@@ -90,8 +93,8 @@ examples = [{
             "sql_cmd": """SELECT COUNT(c.cbo_id) AS clf_count
                         FROM m_cbo c
                         INNER JOIN m_block b ON b.block_id = c.block_id
-                        WHERE b.project_code = 'NRETP' 
-                        AND c.cbo_type_id = (SELECT cbo_type_id FROM m_cbo_type WHERE type_short_name = 'CLF')
+                        WHERE upper(b.project_code) = 'NRETP' 
+                        AND c.cbo_type_id = (SELECT cbo_type_id FROM m_cbo_type WHERE upper(type_short_name)= 'CLF')
                         AND c.record_status=1""",
             "result": """[(306)]""",
             "answer": """There are total 306 CLF in project NRETP """,
@@ -99,11 +102,11 @@ examples = [{
         {
             "input": "how many shg, vo and clf in district bhojpur",
             "sql_cmd": """SELECT
-                SUM(CASE WHEN cbo_type_id = (SELECT cbo_type_id FROM m_cbo_type WHERE type_short_name = 'SHG') THEN 1 ELSE 0 END) AS shg_count,
-                SUM(CASE WHEN cbo_type_id = (SELECT cbo_type_id FROM m_cbo_type WHERE type_short_name = 'VO') THEN 1 ELSE 0 END) AS vo_count,
-                SUM(CASE WHEN cbo_type_id = (SELECT cbo_type_id FROM m_cbo_type WHERE type_short_name = 'CLF') THEN 1 ELSE 0 END) AS clf_count
+                SUM(CASE WHEN cbo_type_id = (SELECT cbo_type_id FROM m_cbo_type WHERE upper(type_short_name) = 'SHG') THEN 1 ELSE 0 END) AS shg_count,
+                SUM(CASE WHEN cbo_type_id = (SELECT cbo_type_id FROM m_cbo_type WHERE upper(type_short_name) = 'VO') THEN 1 ELSE 0 END) AS vo_count,
+                SUM(CASE WHEN cbo_type_id = (SELECT cbo_type_id FROM m_cbo_type WHERE upper(type_short_name) = 'CLF') THEN 1 ELSE 0 END) AS clf_count
                 FROM m_cbo c
-                WHERE district_id = (SELECT district_id FROM m_district WHERE district_name = 'BHOJPUR')
+                WHERE district_id = (SELECT district_id FROM m_district WHERE upper(district_name) = 'BHOJPUR')
                 AND c.record_status=1""",
             "result": """[(20863	1535	37)]""",
             "answer": """There are total 20863 shg	1535 vo and	37 CLF in district BHOJPUR """,
@@ -111,11 +114,11 @@ examples = [{
         {
              "input": "What is the count of all members across SHGs, VOs and CLFs in district Patna?",
             "sql_cmd": """SSELECT
-    SUM(CASE WHEN cbo_type_id = (SELECT cbo_type_id FROM m_cbo_type WHERE type_short_name = 'SHG') THEN 1 ELSE 0 END) AS shg_count,
-    SUM(CASE WHEN cbo_type_id = (SELECT cbo_type_id FROM m_cbo_type WHERE type_short_name = 'VO') THEN 1 ELSE 0 END) AS vo_count,
-    SUM(CASE WHEN cbo_type_id = (SELECT cbo_type_id FROM m_cbo_type WHERE type_short_name = 'CLF') THEN 1 ELSE 0 END) AS clf_count
+    SUM(CASE WHEN cbo_type_id = (SELECT cbo_type_id FROM m_cbo_type WHERE upper(type_short_name)= 'SHG') THEN 1 ELSE 0 END) AS shg_count,
+    SUM(CASE WHEN cbo_type_id = (SELECT cbo_type_id FROM m_cbo_type WHERE upper(type_short_name) = 'VO') THEN 1 ELSE 0 END) AS vo_count,
+    SUM(CASE WHEN cbo_type_id = (SELECT cbo_type_id FROM m_cbo_type WHERE upper(type_short_name) = 'CLF') THEN 1 ELSE 0 END) AS clf_count
 FROM m_cbo c
-WHERE district_id = (SELECT district_id FROM m_district WHERE district_name = 'PATNA')
+WHERE district_id = (SELECT district_id FROM m_district WHERE upper(district_name) = 'PATNA')
 AND c.record_status = 1""",
             "result": """[(41010	2725	65)]""",
             "answer": """There are total 41010 shg	12725 vo and	65 CLF in district PATNA """,
@@ -134,19 +137,19 @@ AND c.record_status = 1""",
                     M_CBO_TYPE ct ON c.CBO_TYPE_ID = ct.CBO_TYPE_ID
                 WHERE
                     bba.ACC_TYPE_ID = 1
-                    AND ct.TYPE_SHORT_NAME = 'SHG'
+                    AND upper(ct.TYPE_SHORT_NAME) = 'SHG'
                     AND c.RECORD_STATUS = 1
                     AND cam.ACC_OPENING_STATUS = 2
-                    AND bba.APPLICATION_DATE >= SYSDATE - INTERVAL '6' MONTH""",
+                    AND bba.APPLICATION_DATE >= CURRENT_DATE - INTERVAL '6 MONTH'""",
             "result": """[(11083)]""",
             "answer": """There are total 11083 shg saving account in last 6 months """,
         },
         {
             "input": "how many shg saving account, vo saving account, clf saving account in last 6 month",
             "sql_cmd": """SELECT
-                    SUM(CASE WHEN ct.TYPE_SHORT_NAME = 'SHG' THEN 1 ELSE 0 END) AS SHG_Saving_Accounts,
-                    SUM(CASE WHEN ct.TYPE_SHORT_NAME = 'VO' THEN 1 ELSE 0 END) AS VO_Saving_Accounts,
-                    SUM(CASE WHEN ct.TYPE_SHORT_NAME = 'CLF' THEN 1 ELSE 0 END) AS CLF_Saving_Accounts
+                    SUM(CASE WHEN upper(ct.TYPE_SHORT_NAME) = 'SHG' THEN 1 ELSE 0 END) AS SHG_Saving_Accounts,
+                    SUM(CASE WHEN upper(ct.TYPE_SHORT_NAME) = 'VO' THEN 1 ELSE 0 END) AS VO_Saving_Accounts,
+                    SUM(CASE WHEN upper(ct.TYPE_SHORT_NAME) = 'CLF' THEN 1 ELSE 0 END) AS CLF_Saving_Accounts
                 FROM
                     M_CBO c
                 JOIN
@@ -159,7 +162,7 @@ AND c.record_status = 1""",
                     bba.ACC_TYPE_ID = 1
                     AND c.RECORD_STATUS = 1
                     AND cam.ACC_OPENING_STATUS = 2
-                    AND bba.APPLICATION_DATE >= SYSDATE - INTERVAL '6' MONTH""",
+                    AND bba.APPLICATION_DATE >= CURRENT_DATE - INTERVAL '6 MONTH'""",
             "result": """[(11218	936	25)]""",
             "answer": """There are total 11218 shg_saving_account 936 VO_Saving_Accounts and 25 CLF_Saving_Accounts in last 6 months""",
         },
@@ -169,8 +172,8 @@ AND c.record_status = 1""",
                             FROM m_cbo c
                             INNER JOIN m_cbo_type t ON c.CBO_TYPE_ID = t.CBO_TYPE_ID  
                             INNER JOIN m_district d ON c.DISTRICT_ID = d.DISTRICT_ID
-                            WHERE t.TYPE_SHORT_NAME = 'SHG' 
-                            AND d.DISTRICT_NAME = 'PATNA' AND SUBSTR(c.formation_date, -2) = '23'
+                            WHERE upper(t.TYPE_SHORT_NAME) = 'SHG' 
+                            AND upper(d.DISTRICT_NAME) = 'PATNA' AND EXTRACT(YEAR FROM c.formation_date) = 2023
                             AND c.record_status=1""",
             "result": """[(1286)]""",
             "answer": """1286 SHG were formed in district Patna in 2023""",
@@ -180,7 +183,7 @@ AND c.record_status = 1""",
             "sql_cmd": """SELECT d.DISTRICT_NAME, COUNT(cm.MEMBER_ID) AS member_count
                            FROM m_district d 
                            INNER JOIN m_cbo_member cm ON  cm.DISTRICT_ID = d.DISTRICT_ID
-                            WHERE d.DISTRICT_NAME IN ('PATNA', 'DARBHANGA')
+                            WHERE upper(d.DISTRICT_NAME) IN ('PATNA', 'DARBHANGA')
                             AND cm.record_status=1
                             GROUP BY d.DISTRICT_NAME""",
             "result": """[(DARBHANGA	526984
@@ -196,7 +199,7 @@ AND c.record_status = 1""",
                             INNER JOIN 
                             m_cbo_type t ON c.cbo_type_id = t.cbo_type_id
                             WHERE
-                            t.type_short_name = 'VO'
+                            upper(t.type_short_name) = 'VO'
                             AND EXTRACT(YEAR FROM c.formation_date) = 2023
                             AND EXTRACT(MONTH FROM c.formation_date) = 12
                             AND c.record_status=1""",
@@ -209,7 +212,7 @@ AND c.record_status = 1""",
                             FROM m_cbo c
                             INNER JOIN m_cbo_type t ON c.CBO_TYPE_ID = t.CBO_TYPE_ID
                             INNER JOIN m_district d ON c.DISTRICT_ID = d.DISTRICT_ID
-                            WHERE t.TYPE_SHORT_NAME = 'VO' AND d.DISTRICT_NAME = 'SAMASTIPUR'
+                            WHERE upper(t.TYPE_SHORT_NAME) = 'VO' AND upper(d.DISTRICT_NAME) = 'SAMASTIPUR'
                             AND c.record_status=1
 """,
             "result": """[(3402)]""",
@@ -226,10 +229,10 @@ AND c.record_status = 1""",
                         INNER JOIN 
                         m_district d ON c.district_id = d.district_id
                         WHERE
-                        t.type_short_name = 'SHG'
-                        AND d.district_name = 'PATNA' 
-                        AND SUBSTR(c.formation_date, 4, 2) BETWEEN '01' AND '03' 
-                        AND SUBSTR(c.formation_date, 7, 2) = '23'
+                        upper(t.type_short_name) = 'SHG'
+                        AND upper(d.district_name)= 'PATNA' 
+                        AND EXTRACT(MONTH FROM c.formation_date) BETWEEN 1 AND 3 
+                        AND EXTRACT(YEAR FROM c.formation_date) = 2023
                         AND c.record_status=1
 """,
             "result": """[(627)]""",
@@ -246,9 +249,9 @@ AND c.record_status = 1""",
                 INNER JOIN
                 m_district d ON c.district_id = d.district_id
                 WHERE
-                t.type_short_name = 'SHG'
-                AND d.district_name = 'SAHARSA'
-                AND SUBSTR(c.formation_date, 7, 2) = '22'
+                upper(t.type_short_name) = 'SHG'
+                AND upper(d.district_name) = 'SAHARSA'
+                AND EXTRACT(YEAR FROM c.formation_date) = 2022
                 AND c.record_status=1""",
             "result": """[(222)]""",
             "answer": """total 222 SHGs formed in Saharsa district in 2022""",
@@ -258,7 +261,7 @@ AND c.record_status = 1""",
             "sql_cmd": """SELECT COUNT(c.cbo_id) AS shg_count \
                             FROM m_cbo c \
                             INNER JOIN m_cbo_type t ON c.cbo_type_id = t.cbo_type_id \
-                            WHERE t.type_short_name = 'SHG' \
+                            WHERE upper(t.type_short_name) = 'SHG' \
                             AND c.record_status=1""",
             "result": """[(1075033)]""",
             "answer": """There are total 1075033 SHG """,
@@ -268,7 +271,7 @@ AND c.record_status = 1""",
             "sql_cmd": """SELECT COUNT(c.cbo_id) AS shg_count \
                             FROM m_cbo c \
                             INNER JOIN m_cbo_type t ON c.cbo_type_id = t.cbo_type_id \
-                            WHERE t.type_short_name = 'SHG' \
+                            WHERE upper(t.type_short_name) = 'SHG' \
                             AND c.record_status=1""",
             "result": """[(1075033)]""",
             "answer": """There are total 1075033 SHG """,
@@ -285,10 +288,10 @@ AND c.record_status = 1""",
                                 INNER JOIN
                                     m_district d ON c.district_id = d.district_id
                                 WHERE
-                                    t.type_short_name = 'SHG'
-                                    AND d.district_name = 'PATNA'
-                                    AND SUBSTR(c.formation_date, 4, 2) BETWEEN '01' AND '03'
-                                    AND SUBSTR(c.formation_date, 7, 2) = '23'
+                                    upper(t.type_short_name) = 'SHG'
+                                    AND upper(d.district_name) = 'PATNA'
+                                    AND EXTRACT(MONTH FROM c.formation_date) BETWEEN 1 AND 3
+                                    AND EXTRACT(YEAR FROM c.formation_date) = 2023
                                     AND c.record_status = 1
                             """,
             "result": """[(631)]""",
@@ -342,7 +345,7 @@ AND c.record_status = 1""",
             "sql_cmd": """SELECT TYPE_DESCRIPTION, COUNT(CBO_ID) AS CBO_COUNT
                         FROM M_CBO C
                         INNER JOIN M_CBO_TYPE T ON C.CBO_TYPE_ID = T.CBO_TYPE_ID
-                        WHERE C.DISTRICT_ID = (SELECT DISTRICT_ID FROM M_DISTRICT WHERE DISTRICT_NAME = 'VAISHALI')
+                        WHERE C.DISTRICT_ID = (SELECT DISTRICT_ID FROM M_DISTRICT WHERE upper(DISTRICT_NAME)= 'VAISHALI')
                         AND C.RECORD_STATUS = 1
                         GROUP BY TYPE_DESCRIPTION
                         ORDER BY CBO_COUNT DESC
@@ -357,4 +360,89 @@ AND c.record_status = 1""",
                             Producer Group	241
                             Cluster Level Federa	60
                             Producer Company	3 in Vaishali"""
+        },
+        {
+            "input": "give me count of panchayat wise shg from patna district?",
+            "sql_cmd": """SELECT p.PANCHAYAT_NAME, COUNT(c.CBO_ID) AS shg_count
+                        FROM m_cbo c
+                        INNER JOIN m_cbo_type t ON c.CBO_TYPE_ID = t.CBO_TYPE_ID
+                        INNER JOIN m_district d ON c.DISTRICT_ID = d.DISTRICT_ID
+                        INNER JOIN m_block b ON c.BLOCK_ID = b.BLOCK_ID
+                        INNER JOIN m_panchayat p ON c.BLOCK_ID = p.BLOCK_ID
+                        WHERE upper(t.TYPE_SHORT_NAME)= 'SHG'
+                        AND upper(d.DISTRICT_NAME) = 'PATNA'
+                        AND c.record_status = 1
+                        GROUP BY p.PANCHAYAT_NAME
+                        ORDER BY shg_count DESC""",
+            "result": """[(1. BARA - 4592 2. IBRAHIMPUR - 4190 3. BARAH - 4150 4. DARIYAPUR - 3959 5. GHOSWARI - 3025)]""",
+            "answer": """1. BARA - 4592 2. IBRAHIMPUR - 4190 3. BARAH - 4150 4. DARIYAPUR - 3959 5. GHOSWARI - 3025""",
+        },
+        {
+            "input": "give me count of panchayat wise shg from patna district?",
+            "sql_cmd": """SELECT p.PANCHAYAT_NAME, COUNT(c.CBO_ID) AS shg_count
+                        FROM m_cbo c
+                        INNER JOIN m_cbo_type t ON c.CBO_TYPE_ID = t.CBO_TYPE_ID
+                        INNER JOIN m_district d ON c.DISTRICT_ID = d.DISTRICT_ID
+                        INNER JOIN m_block b ON c.BLOCK_ID = b.BLOCK_ID
+                        INNER JOIN m_panchayat p ON c.block_id = p.block_id
+                        WHERE upper(t.TYPE_SHORT_NAME)= 'SHG'
+                        AND upper(d.DISTRICT_NAME) = 'PATNA'
+                        AND c.record_status = 1
+                        GROUP BY p.PANCHAYAT_NAME
+                        ORDER BY shg_count DESC""",
+            "result": """[(1456)]""",
+            "answer": """There are 1456 shg in lakhani bigha panchayat""",
+        },
+        {
+            "input": "give me count of panchayat wise shg from patna district?",
+            "sql_cmd": """SELECT p.PANCHAYAT_NAME, COUNT(c.CBO_ID) AS shg_count
+                        FROM m_cbo c
+                        INNER JOIN m_cbo_type t ON c.CBO_TYPE_ID = t.CBO_TYPE_ID
+                        INNER JOIN m_district d ON c.DISTRICT_ID = d.DISTRICT_ID
+                        INNER JOIN m_block b ON c.BLOCK_ID = b.BLOCK_ID
+                        INNER JOIN m_panchayat p ON c.BLOCK_ID = p.BLOCK_ID
+                        WHERE upper(t.TYPE_SHORT_NAME)= 'SHG'
+                        AND upper(d.DISTRICT_NAME) = 'PATNA'
+                        AND c.record_status = 1
+                        GROUP BY p.PANCHAYAT_NAME
+                        ORDER BY shg_count DESC""",
+            "result": """[(1. BARA - 4592 2. IBRAHIMPUR - 4190 3. BARAH - 4150 4. DARIYAPUR - 3959 5. GHOSWARI - 3025)]""",
+            "answer": """1. BARA - 4592 2. IBRAHIMPUR - 4190 3. BARAH - 4150 4. DARIYAPUR - 3959 5. GHOSWARI - 3025""",
+        },
+        {
+            "input": "how many shg in lakhani bigha panchayat?",
+            "sql_cmd": """SELECT
+    COUNT(c.CBO_ID) AS shg_count
+FROM
+    m_cbo c
+INNER JOIN
+    m_cbo_type t ON c.CBO_TYPE_ID = t.CBO_TYPE_ID
+INNER JOIN
+    m_district d ON c.DISTRICT_ID = d.DISTRICT_ID
+INNER JOIN
+    m_block b ON c.BLOCK_ID = b.BLOCK_ID
+INNER JOIN
+    m_panchayat p ON c.BLOCK_ID = p.BLOCK_ID
+WHERE
+    upper(t.TYPE_SHORT_NAME) = 'SHG'
+    AND upper(p.PANCHAYAT_NAME) = 'LAKHANI BIGHA'
+    AND c.record_status = 1""",
+            "result": """[(1456)]""",
+            "answer": """There are 1456 shg in lakhani bigha panchayat"""
+        },
+        {
+            "input": "give me toatal members between 2020 and 2021",
+            "sql_cmd": """SELECT 
+                            COUNT(DISTINCT m.member_id) AS total_members
+                            FROM
+                            m_cbo_member m
+                            INNER JOIN
+                            mp_cbo_member t on m.member_id=t.member_id
+                            INNER JOIN
+                            m_cbo c ON t.cbo_id = c.cbo_id
+                            WHERE
+                            EXTRACT(YEAR FROM m.date_of_joining) BETWEEN 2020 AND 2021
+                            AND c.record_status=1""",
+            "result": """[(1652157)]""",
+            "answer": """There are total 1652157 members""",
         }]
