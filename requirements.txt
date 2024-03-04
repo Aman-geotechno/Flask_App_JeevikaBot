@@ -19,3 +19,4 @@ chainlit
 flask
 flask_cors 
 flask-cors
+psycopg2
